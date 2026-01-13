@@ -59,6 +59,18 @@ jobs:
             "\.sqlite3?$"     # SQLite databases
           )
           
+          # Define protected paths that should never be auto-merged
+          PROTECTED_PATHS=(
+            "^\.github/"                # GitHub configuration
+            "^\.git"                    # Git configuration
+            "^LICENSE"                  # License file
+            "^README\.md$"              # Main README
+            "^AUTO_APPROVAL\.md$"       # Auto-approval docs
+          )
+          
+          # Maximum file size in bytes (10MB)
+          MAX_FILE_SIZE=10485760
+          
           CHANGED_FILES="${{ steps.changed-files.outputs.files }}"
           ALL_ALLOWED=true
           
@@ -68,6 +80,26 @@ jobs:
               continue
             fi
             
+            # Check if file is in protected path
+            for protected in "${PROTECTED_PATHS[@]}"; do
+              if echo "$file" | grep -qE "$protected"; then
+                echo "✗ File is in protected path: $file"
+                ALL_ALLOWED=false
+                continue 2
+              fi
+            done
+            
+            # Check file size if file exists
+            if [ -f "$file" ]; then
+              FILE_SIZE=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
+              if [ "$FILE_SIZE" -gt "$MAX_FILE_SIZE" ]; then
+                echo "✗ File exceeds size limit ($(($FILE_SIZE / 1048576))MB): $file"
+                ALL_ALLOWED=false
+                continue
+              fi
+            fi
+            
+            # Check file extension
             FILE_ALLOWED=false
             for pattern in "${ALLOWED_PATTERNS[@]}"; do
               if echo "$file" | grep -qE "$pattern"; then
@@ -95,13 +127,18 @@ jobs:
       - name: Enable auto-merge
         if: steps.check-files.outputs.all_allowed == 'true'
         run: |
-          gh pr merge ${{ github.event.pull_request.number }} --auto --squash
+          gh pr merge ${{ github.event.pull_request.number }} --auto --merge
         env:
           GH_TOKEN: ${{ github.token }}
 
       - name: Comment on PR if files not allowed
         if: steps.check-files.outputs.all_allowed != 'true'
         run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "⚠️ This PR contains files that do not match the allowed patterns. Please ensure all files are valid submission types (e.g., .py, .ipynb, .txt, .pdf, etc.)."
+          gh pr comment ${{ github.event.pull_request.number }} --body "⚠️ This PR cannot be auto-approved because:
+          - Some files do not match allowed patterns (must be: .py, .ipynb, .txt, .pdf, etc.)
+          - Files may be in protected paths (.github/, LICENSE, README.md)
+          - Files may exceed the 10MB size limit
+          
+          Please ensure all files are valid submission types and review the [AUTO_APPROVAL.md](../blob/main/AUTO_APPROVAL.md) documentation."
         env:
           GH_TOKEN: ${{ github.token }}
