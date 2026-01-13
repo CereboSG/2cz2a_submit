@@ -2,6 +2,8 @@
 
 This repository is configured as an automated file upload platform. Pull requests containing approved file types will be automatically reviewed and merged.
 
+> **📖 For Students**: Looking for step-by-step submission instructions? See the [STUDENT_SUBMISSION_GUIDE.md](STUDENT_SUBMISSION_GUIDE.md) for a complete walkthrough with three different submission methods.
+
 ## How It Works
 
 When you create a pull request:

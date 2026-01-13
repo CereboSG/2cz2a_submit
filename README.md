@@ -22,7 +22,9 @@ This repository features **automated file approval**! When you submit a pull req
 3. Create a pull request
 4. Your PR will be automatically approved and merged if files match allowed patterns
 
-For more details, see [AUTO_APPROVAL.md](AUTO_APPROVAL.md).
+📖 **For Students**: See the complete step-by-step guide: [STUDENT_SUBMISSION_GUIDE.md](STUDENT_SUBMISSION_GUIDE.md)
+
+For technical details about the automated system, see [AUTO_APPROVAL.md](AUTO_APPROVAL.md).
 
 ---
 
