@@ -6,8 +6,25 @@ Welcome to **2cz2a_submit**! This repository contains teaching and learning mate
 
 ## Table of Contents
 
+- [Automated File Submissions](#automated-file-submissions)
 - [List of Software Used](#list-of-software-used)
 - [Using Github Codespaces](#using-github-codespaces)
+
+---
+
+## Automated File Submissions
+
+This repository features **automated file approval**! When you submit a pull request with common file types (`.py`, `.ipynb`, `.txt`, `.pdf`, etc.), it will be automatically reviewed and merged.
+
+📤 **How to Submit Files:**
+1. Fork this repository or create a branch
+2. Add your files (homework, projects, notes, etc.)
+3. Create a pull request
+4. Your PR will be automatically approved and merged if files match allowed patterns
+
+📖 **For Students**: See the complete step-by-step guide: [STUDENT_SUBMISSION_GUIDE.md](STUDENT_SUBMISSION_GUIDE.md)
+
+For technical details about the automated system, see [AUTO_APPROVAL.md](AUTO_APPROVAL.md).
 
 ---
 
