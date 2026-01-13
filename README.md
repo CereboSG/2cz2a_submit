@@ -1,6 +1,6 @@
-# Materials for NJCCZ Students
+# 2cz2a_submit
 
-Welcome to **Materials for NJCCZ Students**! This repository is designed to store teaching and learning materials for H2 Computing and a little more. 
+Welcome to **2cz2a_submit**! This repository contains teaching and learning materials for H2 Computing. 
 
 ---
 
