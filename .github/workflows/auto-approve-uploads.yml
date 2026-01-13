@@ -1,0 +1,107 @@
+name: Auto-Approve File Uploads
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-approve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get the list of changed files in the PR
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Check file patterns
+        id: check-files
+        run: |
+          # Define allowed file extensions and patterns
+          # This mimics a file upload platform - all common submission file types are allowed
+          ALLOWED_PATTERNS=(
+            "\.py$"           # Python files
+            "\.ipynb$"        # Jupyter notebooks
+            "\.txt$"          # Text files
+            "\.pdf$"          # PDF documents
+            "\.md$"           # Markdown files
+            "\.json$"         # JSON files
+            "\.csv$"          # CSV files
+            "\.xlsx?$"        # Excel files
+            "\.docx?$"        # Word documents
+            "\.pptx?$"        # PowerPoint files
+            "\.zip$"          # Zip archives
+            "\.png$"          # Images
+            "\.jpe?g$"        # Images
+            "\.gif$"          # Images
+            "\.svg$"          # Images
+            "\.html$"         # HTML files
+            "\.css$"          # CSS files
+            "\.js$"           # JavaScript files
+            "\.sql$"          # SQL files
+            "\.db$"           # Database files
+            "\.sqlite3?$"     # SQLite databases
+          )
+          
+          CHANGED_FILES="${{ steps.changed-files.outputs.files }}"
+          ALL_ALLOWED=true
+          
+          # Check each changed file
+          while IFS= read -r file; do
+            if [ -z "$file" ]; then
+              continue
+            fi
+            
+            FILE_ALLOWED=false
+            for pattern in "${ALLOWED_PATTERNS[@]}"; do
+              if echo "$file" | grep -qE "$pattern"; then
+                FILE_ALLOWED=true
+                echo "✓ File matches allowed pattern: $file"
+                break
+              fi
+            done
+            
+            if [ "$FILE_ALLOWED" = false ]; then
+              echo "✗ File does not match allowed patterns: $file"
+              ALL_ALLOWED=false
+            fi
+          done <<< "$CHANGED_FILES"
+          
+          echo "all_allowed=$ALL_ALLOWED" >> $GITHUB_OUTPUT
+
+      - name: Approve PR
+        if: steps.check-files.outputs.all_allowed == 'true'
+        run: |
+          gh pr review ${{ github.event.pull_request.number }} --approve --body "✅ Auto-approved: All files match allowed patterns for submission."
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Enable auto-merge
+        if: steps.check-files.outputs.all_allowed == 'true'
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} --auto --squash
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Comment on PR if files not allowed
+        if: steps.check-files.outputs.all_allowed != 'true'
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "⚠️ This PR contains files that do not match the allowed patterns. Please ensure all files are valid submission types (e.g., .py, .ipynb, .txt, .pdf, etc.)."
+        env:
+          GH_TOKEN: ${{ github.token }}
